@@ -18,6 +18,9 @@ class Setup {
         $_homeDir = shell_exec('echo -n "$HOME"');
         $_wwwDir = shell_exec('echo -n "$HOME/public_html"');
         $_installDir = getcwd();
+        $_acsCustomLocation = "";
+        $_sloCustomLocation = "";
+
         $_serviceName = "myservice";
         $_spName = "Service Provider Name";
         $_spDescription = "Service Provider Description";
@@ -31,11 +34,34 @@ class Setup {
         $_technicalContactEmail = "";
         $_spCountryName = "IT";
         $_spLocalityName = "";
-        $_spIsPublicAdministration = "yes";
-        $_spOrganizationSerialNumber = "";
+        $_spOrganizationCodeType = "VATNumber";
+        $_spOrganizationCode = "";
+        $_spOrganizationEmailAddress = "";
+        $_spOrganizationTelephoneNumber = "";
+
+        // ContactPerson billing
+        $_fpaIdPaese = "IT";
+        $_fpaIdCodice = "";
+        $_fpaDenominazione = "";
+        $_fpaIndirizzo = "";
+        $_fpaNumeroCivico = "";
+        $_fpaCAP = "";
+        $_fpaComune = "";
+        $_fpaProvincia = "";
+        $_fpaNazione = "IT";
+        $_fpaOrganizationName = "";
+        $_fpaOrganizationEmailAddress = "";
+        $_fpaOrganizationTelephoneNumber = "";
 
         $config = file_exists("spid-php-setup.json") ?
                 json_decode(file_get_contents("spid-php-setup.json"), true) : array();
+
+        if (!isset($config['acsCustomLocation'])) {
+            $config['acsCustomLocation'] = $_acsCustomLocation;
+        }
+        if (!isset($config['sloCustomLocation'])) {
+            $config['sloCustomLocation'] = $_sloCustomLocation;
+        }
 
         if (!isset($config['installDir'])) {
             echo "Please insert path for current directory (" .
@@ -119,36 +145,172 @@ class Setup {
         }
 
         if (!isset($config['spIsPublicAdministration'])) {
-            echo "Is your Organization URL a Public Administration (yes/no)? (" .
-            $colors->getColoredString($_spIsPublicAdministration, "green") . "): ";
+            echo "Is your Organization a Public Administration (" .
+            $colors->getColoredString("Y", "green") . "): ";
             $config['spIsPublicAdministration'] = readline();
-            if ($config['spIsPublicAdministration'] == null || $config['spIsPublicAdministration'] == "") {
-                $config['spIsPublicAdministration'] = $_spIsPublicAdministration;
-            }
+            $config['spIsPublicAdministration'] = ($config['spIsPublicAdministration'] != null &&
+                    strtoupper($config['spIsPublicAdministration']) == "N") ? false : true;
         }
 
-        if (!isset($config['spOrganizationSerialNumber'])) {
-            switch ($config['spIsPublicAdministration']) {
-                case 'yes': echo "Please insert your Organization's IPA Code(" .
-                    $colors->getColoredString($_spOrganizationSerialNumber, "green") . "): ";
-                    $config['spOrganizationSerialNumber'] = "PA:IT-" . readline();
-                    if ($config['spOrganizationSerialNumber'] == null || $config['spOrganizationSerialNumber'] == "") {
-                        $config['spOrganizationSerialNumber'] = "PA:IT-" . $_spOrganizationSerialNumber;
+        switch ($config['spIsPublicAdministration']) {
+            case true: 
+                if (!isset($config['spOrganizationCodeType']) 
+                    || !isset($config['spOrganizationCode'])
+                    || $config['spOrganizationCodeType']!='IPACode'
+                ) {
+                    echo "Please insert your Organization's IPA Code (" .
+                        $colors->getColoredString($_spOrganizationCode, "green") . "): ";
+                    $config['spOrganizationCode'] = readline();
+                    if ($config['spOrganizationCode'] == null || $config['spOrganizationCode'] == "") {
+                        $config['spOrganizationCode'] = $_spOrganizationCode;
                     }
-                    break;
+                    $config['spOrganizationCodeType'] = "IPACode";
+                    $config['spOrganizationIdentifier'] = "PA:IT-" . $config['spOrganizationCode'];
+                }
+                break;
 
-                case 'no': echo "Please insert your Organization's VAT identification number(" .
-                    $colors->getColoredString($_spOrganizationSerialNumber, "green") . "): ";
-                    $config['spOrganizationSerialNumber'] = "VATIT-" . readline();
-                    if ($config['spOrganizationSerialNumber'] == null || $config['spOrganizationSerialNumber'] == "") {
-                        $config['spOrganizationSerialNumber'] = "VATIT-" . $_spOrganizationSerialNumber;
+            case false: 
+                if (!isset($config['spOrganizationCodeType']) 
+                    || !isset($config['spOrganizationCode'])
+                    || (
+                        $config['spOrganizationCodeType']!='VATNumber'
+                        && $config['spOrganizationCodeType']!='FiscalCode'
+                    )
+                ) {
+                    echo "Please insert 1 for VATNumber or 2 for FiscalCode (" .
+                        $colors->getColoredString(($_spOrganizationCodeType=='VATNumber')? '1':'2', "green") . "): ";
+                    $_organizationCodeTypeChoice = readline();
+                    if ($_organizationCodeTypeChoice == null || $_organizationCodeTypeChoice == "") {
+                        $_organizationCodeTypeChoice = '1';
                     }
-                    break;
+                    if($_organizationCodeTypeChoice!='1' && $_organizationCodeTypeChoice!='2') {
+                        echo "Your Organization Code type is not correctly set. It must be 1 (VATNumber) or 2 (FiscalCode). Please retry installation.\n";
+                        die();
+                    }
+                    $config['spOrganizationCodeType'] = $_organizationCodeTypeChoice==1? 'VATNumber' : 'FiscalCode';
+                    echo "Please insert your Organization's " . $config['spOrganizationCodeType'] . " (" .
+                        $colors->getColoredString($_spOrganizationCode, "green") . "): ";
+                    $config['spOrganizationCode'] = readline();
+                    if ($config['spOrganizationCode'] == null || $config['spOrganizationCode'] == "") {
+                        $config['spOrganizationCode'] = $_spOrganizationCode;
+                    }
+                    $config['spOrganizationIdentifier'] = ($_organizationCodeTypeChoice==1? "VATIT-" : "CF:IT-") . $config['spOrganizationCode'];
+                    $_fpaIdCodice = $config['spOrganizationCode'];
+                }
 
-                default: echo "Your Organization type is not correctly set. Please retry installation. Found: ".$config['spIsPublicAdministration']."\n";
-                    die();
-                    break;
-            }
+                if (!isset($config['fpaIdPaese'])) {
+                    echo "Please insert your IdPaese for CessionarioCommittente (" .
+                    $colors->getColoredString($_fpaIdPaese, "green") . "): ";
+                    $config['fpaIdPaese'] = str_replace("'", "\'", readline());
+                    if ($config['fpaIdPaese'] == null || $config['fpaIdPaese'] == "") {
+                        $config['fpaIdPaese'] = $_fpaIdPaese;
+                    }
+                }
+
+                if (!isset($config['fpaIdCodice'])) {
+                    echo "Please insert your IdCodice for CessionarioCommittente (" .
+                    $colors->getColoredString($_fpaIdCodice, "green") . "): ";
+                    $config['fpaIdCodice'] = str_replace("'", "\'", readline());
+                    if ($config['fpaIdCodice'] == null || $config['fpaIdCodice'] == "") {
+                        $config['fpaIdCodice'] = $_fpaIdCodice;
+                    }
+                }
+
+                if (!isset($config['fpaDenominazione'])) {
+                    echo "Please insert your Denominazione for CessionarioCommittente (" .
+                    $colors->getColoredString($_fpaDenominazione, "green") . "): ";
+                    $config['fpaDenominazione'] = str_replace("'", "\'", readline());
+                    if ($config['fpaDenominazione'] == null || $config['fpaDenominazione'] == "") {
+                        $config['fpaDenominazione'] = $_fpaDenominazione;
+                    }
+                }
+
+                if (!isset($config['fpaIndirizzo'])) {
+                    echo "Please insert your Indirizzo for CessionarioCommittente (" .
+                    $colors->getColoredString($_fpaIndirizzo, "green") . "): ";
+                    $config['fpaIndirizzo'] = str_replace("'", "\'", readline());
+                    if ($config['fpaIndirizzo'] == null || $config['fpaIndirizzo'] == "") {
+                        $config['fpaIndirizzo'] = $_fpaIndirizzo;
+                    }
+                }
+
+                if (!isset($config['fpaNumeroCivico'])) {
+                    echo "Please insert your NumeroCivico for CessionarioCommittente (" .
+                    $colors->getColoredString($_fpaNumeroCivico, "green") . "): ";
+                    $config['fpaNumeroCivico'] = str_replace("'", "\'", readline());
+                    if ($config['fpaNumeroCivico'] == null || $config['fpaNumeroCivico'] == "") {
+                        $config['fpaNumeroCivico'] = $_fpaNumeroCivico;
+                    }
+                }
+
+                if (!isset($config['fpaCAP'])) {
+                    echo "Please insert your CAP for CessionarioCommittente (" .
+                    $colors->getColoredString($_fpaCAP, "green") . "): ";
+                    $config['fpaCAP'] = str_replace("'", "\'", readline());
+                    if ($config['fpaCAP'] == null || $config['fpaCAP'] == "") {
+                        $config['fpaCAP'] = $_fpaCAP;
+                    }
+                }
+
+                if (!isset($config['fpaComune'])) {
+                    echo "Please insert your Comune for CessionarioCommittente (" .
+                    $colors->getColoredString($_fpaComune, "green") . "): ";
+                    $config['fpaComune'] = str_replace("'", "\'", readline());
+                    if ($config['fpaComune'] == null || $config['fpaComune'] == "") {
+                        $config['fpaComune'] = $_fpaComune;
+                    }
+                }
+
+                if (!isset($config['fpaProvincia'])) {
+                    echo "Please insert your Provincia for CessionarioCommittente (" .
+                    $colors->getColoredString($_fpaProvincia, "green") . "): ";
+                    $config['fpaProvincia'] = str_replace("'", "\'", readline());
+                    if ($config['fpaProvincia'] == null || $config['fpaProvincia'] == "") {
+                        $config['fpaProvincia'] = $_fpaProvincia;
+                    }
+                }
+
+                if (!isset($config['fpaNazione'])) {
+                    echo "Please insert your Nazione for CessionarioCommittente (" .
+                    $colors->getColoredString($_fpaNazione, "green") . "): ";
+                    $config['fpaNazione'] = str_replace("'", "\'", readline());
+                    if ($config['fpaNazione'] == null || $config['fpaNazione'] == "") {
+                        $config['fpaNazione'] = $_fpaNazione;
+                    }
+                }
+
+                if (!isset($config['fpaOrganizationName'])) {
+                    echo "Please insert your OrganizationName for CessionarioCommittente (" .
+                    $colors->getColoredString($_fpaOrganizationName, "green") . "): ";
+                    $config['fpaOrganizationName'] = str_replace("'", "\'", readline());
+                    if ($config['fpaOrganizationName'] == null || $config['fpaOrganizationName'] == "") {
+                        $config['fpaOrganizationName'] = $_fpaOrganizationName;
+                    }
+                }
+
+                if (!isset($config['fpaOrganizationEmailAddress'])) {
+                    echo "Please insert your OrganizationEmailAddress for CessionarioCommittente (" .
+                    $colors->getColoredString($_fpaOrganizationEmailAddress, "green") . "): ";
+                    $config['fpaOrganizationEmailAddress'] = str_replace("'", "\'", readline());
+                    if ($config['fpaOrganizationEmailAddress'] == null || $config['fpaOrganizationEmailAddress'] == "") {
+                        $config['fpaOrganizationEmailAddress'] = $_fpaOrganizationEmailAddress;
+                    }
+                }
+
+                if (!isset($config['fpaOrganizationTelephoneNumber'])) {
+                    echo "Please insert your OrganizationTelephoneNumber for CessionarioCommittente (" .
+                    $colors->getColoredString($_fpaOrganizationTelephoneNumber, "green") . "): ";
+                    $config['fpaOrganizationTelephoneNumber'] = str_replace("'", "\'", readline());
+                    if ($config['fpaOrganizationTelephoneNumber'] == null || $config['fpaOrganizationTelephoneNumber'] == "") {
+                        $config['fpaOrganizationTelephoneNumber'] = $_fpaOrganizationTelephoneNumber;
+                    }
+                }
+
+                break;
+
+            default: echo "Your Organization type is not correctly set. Please retry installation. Found: ".$config['spIsPublicAdministration']."\n";
+                die();
+                break;
         }
 
         if (!isset($config['spCountryName'])) {
@@ -315,6 +477,10 @@ class Setup {
             }
         }
 
+        /* Technical ContactPerson into metadata is not compliant with Avviso SPID n.29 v3 */
+        $config['technicalContactName'] = $_technicalContactName;
+        $config['technicalContactEmail'] = $_technicalContactEmail;
+        /*
         if (!isset($config['technicalContactName'])) {
             echo "Please insert Tachnical Contact Name (" .
               $colors->getColoredString($_technicalContactName, "green") . "): ";
@@ -332,44 +498,75 @@ class Setup {
                 $config['technicalContactEmail'] = $_technicalContactEmail;
             }
         }
+        */
 
-        echo $colors->getColoredString("\nCurrent directory: " .
-                $config['installDir'], "yellow");
-        echo $colors->getColoredString("\nWeb root directory: " .
-                $config['wwwDir'], "yellow");
-        echo $colors->getColoredString("\nService Name: " .
-                $config['serviceName'], "yellow");
-        echo $colors->getColoredString("\nEntity ID: " .
-                $config['entityID'], "yellow");
-        echo $colors->getColoredString("\nService Provider Name: " .
-                $config['spName'], "yellow");
-        echo $colors->getColoredString("\nService Provider Description: " .
-                $config['spDescription'], "yellow");
-        echo $colors->getColoredString("\nOrganization Name: " .
-                $config['spOrganizationName'], "yellow");
-        echo $colors->getColoredString("\nOrganization Display Name: " .
-                $config['spOrganizationDisplayName'], "yellow");
-        echo $colors->getColoredString("\nOrganization URL: " .
-                $config['spOrganizationURL'], "yellow");
-        echo $colors->getColoredString("\nAttribute Consuming Service Index: " .
-                $config['acsIndex'], "yellow");
+        if (!isset($config['spOrganizationEmailAddress'])) {
+            echo "Please insert Organization Contact Email Address (" .
+              $colors->getColoredString($_spOrganizationEmailAddress, "green") . "): ";
+            $config['spOrganizationEmailAddress'] = str_replace("'", "\'", readline());
+            if ($config['spOrganizationEmailAddress'] == null || $config['spOrganizationEmailAddress'] == "") {
+                $config['spOrganizationEmailAddress'] = $_spOrganizationEmailAddress;
+            }
+        }
+
+        if (!isset($config['spOrganizationTelephoneNumber'])) {
+            echo "Please insert Organization Contact Telephone Number (" .
+              $colors->getColoredString($_spOrganizationTelephoneNumber, "green") . "): ";
+            $config['spOrganizationTelephoneNumber'] = str_replace("'", "\'", readline());
+            if ($config['spOrganizationTelephoneNumber'] == null || $config['spOrganizationTelephoneNumber'] == "") {
+                $config['spOrganizationTelephoneNumber'] = $_spOrganizationTelephoneNumber;
+            }
+        }
+
+
+
+        echo $colors->getColoredString("\nCurrent directory: " . $config['installDir'], "yellow");
+        echo $colors->getColoredString("\nWeb root directory: " . $config['wwwDir'], "yellow");
+        echo $colors->getColoredString("\nService Name: " . $config['serviceName'], "yellow");
+        echo $colors->getColoredString("\nEntity ID: " . $config['entityID'], "yellow");
+        echo $colors->getColoredString("\nService Provider Name: " . $config['spName'], "yellow");
+        echo $colors->getColoredString("\nService Provider Description: " . $config['spDescription'], "yellow");
+        echo $colors->getColoredString("\nOrganization Name: " . $config['spOrganizationName'], "yellow");
+        echo $colors->getColoredString("\nOrganization Display Name: " . $config['spOrganizationDisplayName'], "yellow");
+        echo $colors->getColoredString("\nOrganization URL: " . $config['spOrganizationURL'], "yellow");
+        echo $colors->getColoredString("\nAttribute Consuming Service Index: " . $config['acsIndex'], "yellow");
         echo $colors->getColoredString("\nAdd configuration for Test IDP idp.spid.gov.it: ", "yellow");
         echo $colors->getColoredString(($config['addTestIDP']) ? "Y" : "N", "yellow");
         echo $colors->getColoredString("\nAdd configuration for local test IDP: ", "yellow");
-        echo $colors->getColoredString(($config['addLocalTestIDP'] != "") ?
-                        $config['addLocalTestIDP'] : "N", "yellow");
+        echo $colors->getColoredString(($config['addLocalTestIDP'] != "") ? $config['addLocalTestIDP'] : "N", "yellow");
         echo $colors->getColoredString("\nAdd configuration for AgID Validator validator.spid.gov.it: ", "yellow");
         echo $colors->getColoredString(($config['addValidatorIDP']) ? "Y" : "N", "yellow");
         echo $colors->getColoredString("\nAdd example php files: ", "yellow");
         echo $colors->getColoredString(($config['addExamples']) ? "Y" : "N", "yellow");
         //echo $colors->getColoredString("\nUse SPID smart button: ", "yellow");
         //echo $colors->getColoredString(($config['useSmartButton'])? "Y":"N", "yellow");
-        echo $colors->getColoredString("\nSimpleSAMLphp Password: " .
-          $config['adminPassword'], "yellow");
-        echo $colors->getColoredString("\nTechnical Contact Name: " .
-          $config['technicalContactName'], "yellow");
-        echo $colors->getColoredString("\nTechnical Contact Email: " .
-          $config['technicalContactEmail'], "yellow");
+        echo $colors->getColoredString("\nSimpleSAMLphp Password: " . $config['adminPassword'], "yellow");
+        //echo $colors->getColoredString("\nTechnical Contact Name: " . $config['technicalContactName'], "yellow");
+        //echo $colors->getColoredString("\nTechnical Contact Email: " . $config['technicalContactEmail'], "yellow");
+        echo $colors->getColoredString("\nOrganization Contact Email Address: " . $config['spOrganizationEmailAddress'], "yellow");
+        echo $colors->getColoredString("\nOrganization Contact Telephone Number: " . $config['spOrganizationTelephoneNumber'], "yellow");
+        echo $colors->getColoredString("\nIs organization a Public Administration: " . ($config['spIsPublicAdministration']) ? "Y" : "N", "yellow");
+        echo $colors->getColoredString("\nOrganization Code Type: " . $config['spOrganizationCodeType'], "yellow");
+        echo $colors->getColoredString("\nOrganization Code: " . $config['spOrganizationCode'], "yellow");
+        echo $colors->getColoredString("\nOrganization Identifier: " . $config['spOrganizationIdentifier'], "yellow");
+        echo $colors->getColoredString("\nCertificate CountryName: " . $config['spCountryName'], "yellow");
+        echo $colors->getColoredString("\nCertificate LocalityName: " . $config['spLocalityName'], "yellow");
+
+        if(!$config['spIsPublicAdministration']) {
+            echo $colors->getColoredString("\nCessionarioCommittente IdPaese: " . $config['fpaIdPaese'], "yellow");
+            echo $colors->getColoredString("\nCessionarioCommittente IdCodice: " . $config['fpaIdCodice'], "yellow");
+            echo $colors->getColoredString("\nCessionarioCommittente Denominazione: " . $config['fpaDenominazione'], "yellow");
+            echo $colors->getColoredString("\nCessionarioCommittente Indirizzo: " . $config['fpaIndirizzo'], "yellow");
+            echo $colors->getColoredString("\nCessionarioCommittente NumeroCivico: " . $config['fpaNumeroCivico'], "yellow");
+            echo $colors->getColoredString("\nCessionarioCommittente CAP: " . $config['fpaCAP'], "yellow");
+            echo $colors->getColoredString("\nCessionarioCommittente Comune: " . $config['fpaComune'], "yellow");
+            echo $colors->getColoredString("\nCessionarioCommittente Provincia: " . $config['fpaProvincia'], "yellow");
+            echo $colors->getColoredString("\nCessionarioCommittente Nazione: " . $config['fpaNazione'], "yellow");
+            echo $colors->getColoredString("\nCessionarioCommittente OrganizationName: " . $config['fpaOrganizationName'], "yellow");
+            echo $colors->getColoredString("\nCessionarioCommittente OrganizationEmailAddress: " . $config['fpaOrganizationEmailAddress'], "yellow");
+            echo $colors->getColoredString("\nCessionarioCommittente OrganizationTelephoneNumber: " . $config['fpaOrganizationTelephoneNumber'], "yellow");
+        }
+        
         echo "\n\n";
 
         // create vhost directory if not exists
@@ -385,7 +582,7 @@ class Setup {
 
         // create certificates
         if (file_exists($config['installDir'] . "/cert/spid-sp.crt") && file_exists($config['installDir'] . "/cert/spid-sp.pem")) {
-            echo $colors->getColoredString("\nSkipping certificates generation", "yellow");
+            echo $colors->getColoredString("\nSkipping certificates generation", "white");
             shell_exec("mkdir " . $config['installDir'] . "/vendor/simplesamlphp/simplesamlphp/cert");
             shell_exec("cp " . $config['installDir'] . "/cert/* " .
                     $config['installDir'] . "/vendor/simplesamlphp/simplesamlphp/cert");
@@ -393,37 +590,40 @@ class Setup {
             shell_exec("mkdir " . $config['installDir'] . "/vendor/simplesamlphp/simplesamlphp/cert");
             echo $colors->getColoredString("\nConfiguring OpenSSL... ", "white");
             if (!file_exists('openssl.cnf')) {
-                $openssl_config = fopen("openssl.cnf", "w");
-                fwrite($openssl_config, "[ req ]\n");
-                fwrite($openssl_config, "default_bits = 2048\n");
+                $openssl_config = fopen("spid-php-openssl.cnf", "w");
+                fwrite($openssl_config, "oid_section = spid_oids\n");
+
+                fwrite($openssl_config, "\n[ req ]\n");
+                fwrite($openssl_config, "default_bits = 3072\n");
                 fwrite($openssl_config, "default_md = sha256\n");
-                fwrite($openssl_config, "prompt = no\n");
-                fwrite($openssl_config, "encrypt_key = no\n");
                 fwrite($openssl_config, "distinguished_name = dn\n");
-                fwrite($openssl_config, "x509_extensions = v3_ca\n");
-                fwrite($openssl_config, "req_extensions  = v3_req\n");
-                fwrite($openssl_config, "x509_extensions = usr_cert\n");
+                fwrite($openssl_config, "encrypt_key = no\n");
+                fwrite($openssl_config, "prompt = no\n");
+                fwrite($openssl_config, "req_extensions  = req_ext\n");
+
+                fwrite($openssl_config, "\n[ spid_oids ]\n");
+                //fwrite($openssl_config, "organizationIdentifier=2.5.4.97\n");
+                fwrite($openssl_config, "spid-privatesector-SP=1.3.76.16.4.3.1\n");
+                fwrite($openssl_config, "spid-publicsector-SP=1.3.76.16.4.2.1\n");
+                fwrite($openssl_config, "uri=2.5.4.83\n");
+
                 fwrite($openssl_config, "\n[ dn ]\n");
-                fwrite($openssl_config, "C = " . $config['spCountryName'] . "\n");
-                fwrite($openssl_config, "L = " . $config['spLocalityName'] . "\n");
-                fwrite($openssl_config, "O = " . $config['spOrganizationName'] . "\n");
-                fwrite($openssl_config, "CN = " . $config['entityID'] . "\n");
-                fwrite($openssl_config, "SN = " . $config['spOrganizationSerialNumber'] . "\n");
-                fwrite($openssl_config, "\n[ usr_cert ]\n");
-                fwrite($openssl_config, "basicConstraints = CA:FALSE\n");
-                fwrite($openssl_config, "nsCertType = client, server, email\n");
-                fwrite($openssl_config, "keyUsage = nonRepudiation, digitalSignature, keyEncipherment\n");
-                fwrite($openssl_config, "extendedKeyUsage = serverAuth, clientAuth, codeSigning, emailProtection\n");
-                fwrite($openssl_config, "nsComment = \"OpenSSL Generated Certificate\"\n");
-                fwrite($openssl_config, "subjectKeyIdentifier = hash\n");
-                fwrite($openssl_config, "authorityKeyIdentifier = keyid,issuer\n");
-                fwrite($openssl_config, "\n[ v3_ca ]\n");
-                fwrite($openssl_config, "certificatePolicies = ia5org,1.2.3.4,1.5.6.7.8,@polsect\n");
-                fwrite($openssl_config, "\n[ polsect ]\n");
+                fwrite($openssl_config, "organizationName=" . $config['spOrganizationName'] . "\n");
+                fwrite($openssl_config, "commonName=" . $config['spOrganizationDisplayName'] . "\n");
+                fwrite($openssl_config, "uri=" . $config['entityID'] . "\n");
+                fwrite($openssl_config, "organizationIdentifier=" . $config['spOrganizationIdentifier'] . "\n");
+                fwrite($openssl_config, "countryName=" . $config['spCountryName'] . "\n");
+                fwrite($openssl_config, "localityName=" . $config['spLocalityName'] . "\n");
+                //fwrite($openssl_config, "serialNumber=" . $config['spOrganizationCode'] . "\n");
+
+                fwrite($openssl_config, "\n[ req_ext ]\n");
+                fwrite($openssl_config, "certificatePolicies = @spid_policies\n");
+
+                fwrite($openssl_config, "\n[ spid_policies ]\n");
                 switch ($config['spIsPublicAdministration']) {
-                    case 'yes': fwrite($openssl_config, "policyIdentifier = spid-publicsector-SP\n");
+                    case true: fwrite($openssl_config, "policyIdentifier = spid-publicsector-SP\n");
                         break;
-                    case 'no': fwrite($openssl_config, "policyIdentifier = spid-privatesector-SP\n");
+                    case false: fwrite($openssl_config, "policyIdentifier = spid-privatesector-SP\n");
                         break;
 
                     default:
@@ -433,20 +633,13 @@ class Setup {
                         die();
                         break;
                 }
-                fwrite($openssl_config, "\n[ v3_req ]\n");
-                fwrite($openssl_config, "basicConstraints       = critical, CA:FALSE\n");
-                fwrite($openssl_config, "subjectKeyIdentifier   = hash\n");
-                fwrite($openssl_config, "authorityKeyIdentifier = keyid:always\n");
-                fwrite($openssl_config, "authorityInfoAccess    = OCSP;URI:http://ocsp.example.com, caIssuers;URI:http://cert.example.com\n");
-                fwrite($openssl_config, "keyUsage               = critical, digitalSignature, keyEncipherment\n");
-                fwrite($openssl_config, "extendedKeyUsage       = serverAuth, clientAuth\n");
-                fclose($openssl_config);
                 echo $colors->getColoredString("OK\n", "green");
             } 
             shell_exec(
-                    "openssl req -config openssl.cnf -x509 -sha256 -days 365 -newkey rsa:2048 -nodes -out " .
-                    $config['installDir'] . "/vendor/simplesamlphp/simplesamlphp/cert/spid-sp.crt -keyout " .
-                    $config['installDir'] . "/vendor/simplesamlphp/simplesamlphp/cert/spid-sp.pem"
+                    "openssl req -new -x509 -config spid-php-openssl.cnf -days 730 " .
+                    " -keyout " . $config['installDir'] . "/vendor/simplesamlphp/simplesamlphp/cert/spid-sp.pem" .
+                    " -out " . $config['installDir'] . "/vendor/simplesamlphp/simplesamlphp/cert/spid-sp.crt" . 
+                    " -extensions req_ext "
             );
 
             shell_exec("mkdir " . $config['installDir'] . "/cert");
@@ -473,7 +666,9 @@ class Setup {
             "{{BASEURLPATH}}" => "'" . $config['serviceName'] . "/'",
             "{{ADMIN_PASSWORD}}" => "'" . $config['adminPassword'] . "'",
             "{{TECHCONTACT_NAME}}" => "'" . $config['technicalContactName'] . "'",
-            "{{TECHCONTACT_EMAIL}}" => "'" . $config['technicalContactEmail'] . "'"
+            "{{TECHCONTACT_EMAIL}}" => "'" . $config['technicalContactEmail'] . "'",
+            "{{ACSCUSTOMLOCATION}}" => "'" . $config['acsCustomLocation'] . "'",
+            "{{SLOCUSTOMLOCATION}}" => "'" . $config['sloCustomLocation'] . "'"
         );
         $template = file_get_contents($config['installDir'] . '/setup/config/config.tpl', true);
         $customized = str_replace(array_keys($vars), $vars, $template);
@@ -491,10 +686,35 @@ class Setup {
             "{{ORGANIZATIONDISPLAYNAME}}" => "'" . $config['spOrganizationDisplayName'] . "'",
             "{{ORGANIZATIONURL}}" => "'" . $config['spOrganizationURL'] . "'",
             "{{ACSINDEX}}" => $config['acsIndex'],
-            "{{ATTRIBUTES}}" => implode(",", $config['attr'])
+            "{{ATTRIBUTES}}" => implode(",", $config['attr']),
+            "{{ORGANIZATIONCODETYPE}}" => "'" . $config['spOrganizationCodeType'] . "'",
+            "{{ORGANIZATIONCODE}}" => "'" . $config['spOrganizationCode'] . "'",
+            "{{ORGANIZATIONEMAILADDRESS}}" => "'" . $config['spOrganizationEmailAddress'] . "'",
+            "{{ORGANIZATIONTELEPHONENUMBER}}" => "'" . $config['spOrganizationTelephoneNumber'] . "'",
         );
 
-        $template = file_get_contents($config['installDir'] . '/setup/config/authsources.tpl', true);
+        if(!$config['spIsPublicAdministration']) {
+            $vars_fpa = array(
+                "{{FPAIDPAESE}}" => "'" . $config['fpaIdPaese'] . "'",
+                "{{FPAIDCODICE}}" => "'" . $config['fpaIdCodice'] . "'",
+                "{{FPADENOMINAZIONE}}" => "'" . $config['fpaDenominazione'] . "'",
+                "{{FPAINDIRIZZO}}" => "'" . $config['fpaIndirizzo'] . "'",
+                "{{FPANUMEROCIVICO}}" => "'" . $config['fpaNumeroCivico'] . "'",
+                "{{FPACAP}}" => "'" . $config['fpaCAP'] . "'",
+                "{{FPACOMUNE}}" => "'" . $config['fpaComune'] . "'",
+                "{{FPAPROVINCIA}}" => "'" . $config['fpaProvincia'] . "'",
+                "{{FPANAZIONE}}" => "'" . $config['fpaNazione'] . "'",
+                "{{FPAORGANIZATIONNAME}}" => "'" . $config['fpaOrganizationName'] . "'",
+                "{{FPAORGANIZATIONEMAILADDRESS}}" => "'" . $config['fpaOrganizationEmailAddress'] . "'",
+                "{{FPAORGANIZATIONTELEPHONENUMBER}}" => "'" . $config['fpaOrganizationTelephoneNumber'] . "'"
+            );
+
+            $vars = array_merge($vars, $vars_fpa);
+        }
+
+
+        $template_type = ($config['spIsPublicAdministration']) ? 'authsources_public.tpl' : 'authsources_private.tpl';
+        $template = file_get_contents($config['installDir'] . '/setup/config/' . $template_type, true);
         $customized = str_replace(array_keys($vars), $vars, $template);
         file_put_contents($config['installDir'] .
                 "/vendor/simplesamlphp/simplesamlphp/config/authsources.php", $customized);

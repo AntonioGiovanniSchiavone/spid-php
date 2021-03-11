@@ -1,4 +1,4 @@
-﻿<?php
+<?php
 
 $config = array(
     'admin' => array(
@@ -61,6 +61,35 @@ $config = array(
         /* AttributeConsumingServiceIndex richiesto in AuthnRequest */
         'AttributeConsumingServiceIndex' => {{ACSINDEX}},
         'acs.Bindings' => array('urn:oasis:names:tc:SAML:2.0:bindings:HTTP-POST'),
-        'NameIDPolicy' => 'urn:oasis:names:tc:SAML:2.0:nameid-format:transient'
+        'NameIDPolicy' => 'urn:oasis:names:tc:SAML:2.0:nameid-format:transient',
+
+        /* ContactPerson according to SPID Avviso n.29 v3 */
+        'contacts' => array(
+            array(
+                'contactType'       => 'other',
+                'spid'              => true,
+                'spid.codeType'     => {{ORGANIZATIONCODETYPE}},
+                'spid.codeValue'    => {{ORGANIZATIONCODE}},
+                'company'           => {{ORGANIZATIONNAME}},
+                'emailAddress'      => {{ORGANIZATIONEMAILADDRESS}},
+                'telephoneNumber'   => {{ORGANIZATIONTELEPHONENUMBER}}
+            ),
+            array(
+                'contactType'       => 'billing',
+                'fpa'               => true,
+                'fpa.IdPaese'       => {{FPAIDPAESE}}, 
+                'fpa.IdCodice'      => {{FPAIDCODICE}},
+                'fpa.Denominazione' => {{FPADENOMINAZIONE}},
+                'fpa.Indirizzo'     => {{FPAINDIRIZZO}},
+                'fpa.NumeroCivico'  => {{FPANUMEROCIVICO}},
+                'fpa.CAP'           => {{FPACAP}},
+                'fpa.Comune'        => {{FPACOMUNE}},
+                'fpa.Provincia'     => {{FPAPROVINCIA}},
+                'fpa.Nazione'       => {{FPANAZIONE}},
+                'company'           => {{FPAORGANIZATIONNAME}},
+                'emailAddress'      => {{FPAORGANIZATIONEMAILADDRESS}},
+                'telephoneNumber'   => {{FPAORGANIZATIONTELEPHONENUMBER}}
+            )
+        )
     )
 );
