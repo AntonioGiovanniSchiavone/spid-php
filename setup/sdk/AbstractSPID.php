@@ -14,4 +14,11 @@
         abstract public function insertSPIDButtonJS();
         abstract public function insertSPIDButton($size);
         abstract public function insertSPIDSmartButton($size);
+        abstract public function setNaturalPerson(); 
+        abstract public function setProfessionalUse();
+        abstract public function setLegalPerson();
+        abstract public function setProfessionalUseOnlyLegalPerson();
+        abstract public function setProfessionalUseOnlyNaturalPerson();
+        abstract public function setProfessionalUseAndLegalPerson();
+        
     }

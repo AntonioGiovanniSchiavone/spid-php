@@ -197,6 +197,46 @@ string getLogoutURL([$returnTo])
 restituisce la url per eseguire la disconnessione. Dopo la disconnessione, l'utente è reindirizzato alla url specificata in $returnTo oppure alla pagina di provenienza se $returnTo non è specificato.
 
 
+##API identificazione  uso professionale e persona giuridica
+Per l'identificazione di soggetti nei casi d'uso indicati dall' [Avviso SPID n°18 v2](https://www.agid.gov.it/sites/default/files/repository_files/spid-avviso-n18_v.2-_autenticazione_persona_giuridica_o_uso_professionale_per_la_persona_giuridica.pdf) 
+
+### setNaturalPerson
+```
+void setNaturalPerson()
+```
+Imposta la libreria per accettare l'identificazione eseguita tramite identità per persona fisica, sia per uso personale che professionale. E' l'impostazione di default della libreria.
+
+### setProfessionalUse
+```
+void setProfessionalUse()
+```
+Imposta la libreria per accettare esclusivamente l'identificazione eseguita tramite identità per uso professionale, sia di persona fisica che di persona giuridica. Corrisponde al purpose "P" indicato dall' [Avviso SPID n°18 v2](https://www.agid.gov.it/sites/default/files/repository_files/spid-avviso-n18_v.2-_autenticazione_persona_giuridica_o_uso_professionale_per_la_persona_giuridica.pdf) 
+
+### setLegalPerson
+```
+void setLegalPerson()
+```
+Imposta la libreria per accettare l'identificazione eseguita tramite identità per persona giuridica, sia per uso professionale che non. Corrisponde al purpose "LP" indicato dall' [Avviso SPID n°18 v2](https://www.agid.gov.it/sites/default/files/repository_files/spid-avviso-n18_v.2-_autenticazione_persona_giuridica_o_uso_professionale_per_la_persona_giuridica.pdf) 
+
+### setProfessionalUseOnlyLegalPerson
+```
+void setProfessionalUseOnlyLegalPerson()
+```
+Imposta la libreria per accettare esclusivamente l'identificazione eseguita tramite identità per persona giuridica uso professionale. Corrisponde al purpose "PG" indicato dall' [Avviso SPID n°18 v2](https://www.agid.gov.it/sites/default/files/repository_files/spid-avviso-n18_v.2-_autenticazione_persona_giuridica_o_uso_professionale_per_la_persona_giuridica.pdf) 
+
+### setProfessionalUseOnlyNaturalPerson
+```
+void setProfessionalUseOnlyNaturalPerson()
+```
+Imposta la libreria per accettare esclusivamente l'identificazione eseguita tramite identità per persona fisica uso professionale. Corrisponde al purpose "PF" indicato dall' [Avviso SPID n°18 v2](https://www.agid.gov.it/sites/default/files/repository_files/spid-avviso-n18_v.2-_autenticazione_persona_giuridica_o_uso_professionale_per_la_persona_giuridica.pdf) 
+
+### setProfessionalUseAndLegalPerson
+```
+void setProfessionalUseAndLegalPerson()
+```
+Imposta la libreria per accettare esclusivamente l'identificazione eseguita tramite identità per persona fisica uso professionale o per persona giuridica, sia per uso professionale che non. Corrisponde al purpose "PX" indicato dall' [Avviso SPID n°18 v2](https://www.agid.gov.it/sites/default/files/repository_files/spid-avviso-n18_v.2-_autenticazione_persona_giuridica_o_uso_professionale_per_la_persona_giuridica.pdf) 
+
+
 ## Esempio di integrazione
 ```
 require_once("<path to spid-php>/spid-php.php");
@@ -209,6 +249,7 @@ if(!$spidsdk->isAuthenticated()) {
         $spidsdk->insertSPIDButton("L");       
         $spidsdk->insertSPIDButtonJS();         
     } else {
+		$spidsdk->setNaturalPerson();
         $spidsdk->login($_GET['idp'], 1);                
     }
 } else {

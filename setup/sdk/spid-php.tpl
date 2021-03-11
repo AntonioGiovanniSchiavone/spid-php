@@ -6,7 +6,8 @@
     class SPID_PHP extends \SPID\AbtractSPID {
         private $spid_auth;
         private $idps = array();
-        private $professionalUse = false;
+        private $UseExtensions = false;
+        private $purpose = null;
 
         function __construct() {
             $this->spid_auth = new SimpleSAML_Auth_Simple('service');
@@ -21,9 +22,36 @@
             return ($this->idps[$idp]==$this->getIdp());
         }
 
-        public function setProfessionalUse($p) {
-            $this->professionalUse = $p;
+        public function setNaturalPerson() {
+            $this->$UseExtensions = false;
+            $this->$purpose = null;
         }
+        
+        public function setProfessionalUse() {
+            $this->$UseExtensions = true;
+            $this->$purpose = "P";
+        }
+        
+        public function setLegalPerson() {
+            $this->$UseExtensions = true;
+            $this->$purpose = "LP";
+        }
+        
+        public function setProfessionalUseOnlyLegalPerson() {
+            $this->$UseExtensions = true;
+            $this->$purpose = "PG";
+        }
+        
+        public function setProfessionalUseOnlyNaturalPerson() {
+            $this->$UseExtensions = true;
+            $this->$purpose = "PF";
+        }
+        
+        public function setProfessionalUseAndLegalPerson() {
+            $this->$UseExtensions = true;
+            $this->$purpose = "PX";
+        }
+        
         
         public function requireAuth() {
             $this->spid_auth->requireAuth();
@@ -42,9 +70,9 @@
                 //'ErrorURL' => '/error_handler.php'
             );
 
-            if($this->professionalUse) {
+            if($UseExtensions) {
                 $dom = \SAML2\DOMDocumentFactory::create();
-                $elem = $dom->createElementNS('https://spid.gov.it/saml-extensions', 'spid:Purpose', 'P');
+                $elem = $dom->createElementNS('https://spid.gov.it/saml-extensions', 'spid:Purpose', $purpose);
                 $pExt[] = new \SAML2\XML\Chunk($elem);  
                 $config['saml:Extensions'] = $pExt;
             } 
@@ -53,7 +81,8 @@
             
             $this->spid_auth->login($config);
         }
-
+        
+        
         public function logout($returnTo = null, $saml_logout = true) {
             if($saml_logout) {
                 $this->spid_auth->logout($returnTo);
