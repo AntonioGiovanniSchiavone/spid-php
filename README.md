@@ -195,10 +195,9 @@ esegue la disconnessione. Dopo la disconnessione, l'utente è reindirizzato alla
 string getLogoutURL([$returnTo])
 ```
 restituisce la url per eseguire la disconnessione. Dopo la disconnessione, l'utente è reindirizzato alla url specificata in $returnTo oppure alla pagina di provenienza se $returnTo non è specificato.
-
-
-##API identificazione  uso professionale e persona giuridica
-Per l'identificazione di soggetti nei casi d'uso indicati dall' [Avviso SPID n°18 v2](https://www.agid.gov.it/sites/default/files/repository_files/spid-avviso-n18_v.2-_autenticazione_persona_giuridica_o_uso_professionale_per_la_persona_giuridica.pdf) 
+ 
+## API identificazione  uso professionale e persona giuridica
+Ulteriori metodi per l'identificazione di soggetti nei casi d'uso indicati dall' [Avviso SPID n°18 v2](https://www.agid.gov.it/sites/default/files/repository_files/spid-avviso-n18_v.2-_autenticazione_persona_giuridica_o_uso_professionale_per_la_persona_giuridica.pdf) 
 
 ### setNaturalPerson
 ```
