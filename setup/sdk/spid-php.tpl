@@ -23,33 +23,33 @@
         }
 
         public function setNaturalPerson() {
-            $this->$UseExtensions = false;
-            $this->$purpose = null;
+            $this->UseExtensions = false;
+            $this->purpose = null;
         }
         
         public function setProfessionalUse() {
-            $this->$UseExtensions = true;
-            $this->$purpose = "P";
+            $this->UseExtensions = true;
+            $this->purpose = "P";
         }
         
         public function setLegalPerson() {
-            $this->$UseExtensions = true;
-            $this->$purpose = "LP";
+            $this->UseExtensions = true;
+            $this->purpose = "LP";
         }
         
         public function setProfessionalUseOnlyLegalPerson() {
-            $this->$UseExtensions = true;
-            $this->$purpose = "PG";
+            $this->UseExtensions = true;
+            $this->purpose = "PG";
         }
         
         public function setProfessionalUseOnlyNaturalPerson() {
-            $this->$UseExtensions = true;
-            $this->$purpose = "PF";
+            $this->UseExtensions = true;
+            $this->purpose = "PF";
         }
         
         public function setProfessionalUseAndLegalPerson() {
-            $this->$UseExtensions = true;
-            $this->$purpose = "PX";
+            $this->UseExtensions = true;
+            $this->purpose = "PX";
         }
         
         
@@ -70,9 +70,10 @@
                 //'ErrorURL' => '/error_handler.php'
             );
 
-            if($UseExtensions) {
+            if($this->UseExtensions) {
                 $dom = \SAML2\DOMDocumentFactory::create();
-                $elem = $dom->createElementNS('https://spid.gov.it/saml-extensions', 'spid:Purpose', $purpose);
+                // $elem = $dom->createElementNS('https://spid.gov.it/saml-extensions', 'spid:Purpose', $this->$purpose);
+                $elem = $dom->createElement('spid:Purpose', $this->$purpose);
                 $pExt[] = new \SAML2\XML\Chunk($elem);  
                 $config['saml:Extensions'] = $pExt;
             } 
